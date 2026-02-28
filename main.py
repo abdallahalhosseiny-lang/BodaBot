@@ -7,22 +7,13 @@ bot = TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    markup = types.InlineKeyboardMarkup()
-    button = types.InlineKeyboardButton("عرض الكود", callback_data="copy_code")
-    markup.add(button)
+    bot.send_message(message.chat.id, "✍️ ابعتلي أي كلمة أو رسالة وهجهزها لك للنسخ 👇")
 
+@bot.message_handler(func=lambda message: True)
+def copy_text(message):
     bot.send_message(
         message.chat.id,
-        "🔥 دلوقتي نزل كود خصم عالمي\n\nاضغط على الكود لنسخه👇",
-        reply_markup=markup
-    )
-
-@bot.callback_query_handler(func=lambda call: call.data == "copy_code")
-def copy_code(call):
-    bot.answer_callback_query(call.id)
-    bot.send_message(
-        call.message.chat.id,
-        "`Gq192nzhee8j`",
+        f"`{message.text}`",
         parse_mode="Markdown"
     )
 
