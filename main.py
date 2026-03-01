@@ -131,3 +131,15 @@ def show_participants(message):
     bot.send_message(message.chat.id, text)
 
 bot.infinity_polling()
+# 🔹 معلومات السحب
+@bot.message_handler(commands=['draw_info'])
+def draw_info(message):
+
+    bot.send_message(
+        message.chat.id,
+        "🔥 تفاصيل السحب 🔥\n\n"
+        "🎁 الجائزة: 660 شدة ببجي\n"
+        "👥 عدد الأرقام: من 1 إلى 1000\n"
+        "🎯 يتم اختيار فائز عشوائي\n"
+        "📢 لازم تكون مشترك في القناة"
+    )
