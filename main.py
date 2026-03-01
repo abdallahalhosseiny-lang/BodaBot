@@ -5,7 +5,8 @@ from telebot import TeleBot, types
 TOKEN = os.environ.get("TOKEN")
 
 CHANNEL_USERNAME = "@bodadraws"
-ADMIN_ID = 2109926990  # انت 👑
+ADMIN_ID = 2109926990          # 👑 انت
+ADMIN_USERNAME = "abdallahmalhosseiny"  # من غير @
 
 bot = TeleBot(TOKEN)
 
@@ -14,7 +15,9 @@ banned_users = set()
 available_numbers = list(range(1, 1001))
 
 
+# =========================
 # ✅ فحص الاشتراك
+# =========================
 def check_subscription(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
@@ -23,7 +26,9 @@ def check_subscription(user_id):
         return False
 
 
+# =========================
 # ✅ رسالة الاشتراك
+# =========================
 def send_subscription_message(chat_id):
     markup = types.InlineKeyboardMarkup()
     markup.add(
@@ -46,7 +51,9 @@ def send_subscription_message(chat_id):
     )
 
 
-# ✅ القائمة الرئيسية
+# =========================
+# 👑 القائمة الرئيسية
+# =========================
 def main_menu(chat_id, is_admin=False):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
@@ -57,11 +64,14 @@ def main_menu(chat_id, is_admin=False):
 
     if is_admin:
         markup.add("🏆 اختيار فائز")
+        markup.add("📋 إدارة المشاركين")
 
     bot.send_message(chat_id, "اختر من القائمة 👇", reply_markup=markup)
 
 
-# ✅ /start
+# =========================
+# /start
+# =========================
 @bot.message_handler(commands=['start'])
 def start(message):
     if not check_subscription(message.from_user.id):
@@ -72,7 +82,9 @@ def start(message):
     main_menu(message.chat.id, is_admin)
 
 
-# ✅ تحقق الاشتراك
+# =========================
+# تحقق الاشتراك
+# =========================
 @bot.callback_query_handler(func=lambda call: call.data == "check_sub")
 def verify_subscription(call):
     if check_subscription(call.from_user.id):
@@ -84,8 +96,10 @@ def verify_subscription(call):
         bot.send_message(call.message.chat.id, "❌ لم يتم الإشتراك بعد.")
 
 
+# =========================
 # 🎯 دخول السحب
-@bot.message_handler(func=lambda message: message.text == "🎯 دخول السحب")
+# =========================
+@bot.message_handler(func=lambda m: m.text == "🎯 دخول السحب")
 def enter_draw(message):
     user_id = message.from_user.id
 
@@ -105,10 +119,17 @@ def save_name(message):
     user_id = message.from_user.id
     name = message.text.strip()
 
+    if user_id in participants:
+        return
+
     for data in participants.values():
         if data["name"].lower() == name.lower():
             bot.send_message(message.chat.id, "❌ الاسم مأخوذ بالفعل.")
             return
+
+    if not available_numbers:
+        bot.send_message(message.chat.id, "❌ انتهت أرقام السحب.")
+        return
 
     number = random.choice(available_numbers)
     available_numbers.remove(number)
@@ -121,23 +142,26 @@ def save_name(message):
     )
 
 
+# =========================
 # 📊 عرض المشاركين
-@bot.message_handler(func=lambda message: message.text == "📊 عرض المشاركين")
+# =========================
+@bot.message_handler(func=lambda m: m.text == "📊 عرض المشاركين")
 def show_participants(message):
     if not participants:
         bot.send_message(message.chat.id, "لا يوجد مشاركين حالياً.")
         return
 
     text = f"📊 عدد المشتركين: {len(participants)}\n\n"
-
     for data in participants.values():
         text += f"👤 {data['name']} - 🎟 {data['number']}\n"
 
     bot.send_message(message.chat.id, text)
 
 
+# =========================
 # ℹ️ معلومات السحب
-@bot.message_handler(func=lambda message: message.text == "ℹ️ معلومات السحب")
+# =========================
+@bot.message_handler(func=lambda m: m.text == "ℹ️ معلومات السحب")
 def draw_info(message):
     bot.send_message(
         message.chat.id,
@@ -147,8 +171,10 @@ def draw_info(message):
     )
 
 
-# 🏆 اختيار فائز (للأدمن فقط)
-@bot.message_handler(func=lambda message: message.text == "🏆 اختيار فائز")
+# =========================
+# 🏆 اختيار فائز (أدمن فقط)
+# =========================
+@bot.message_handler(func=lambda m: m.text == "🏆 اختيار فائز")
 def pick_winner(message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -167,13 +193,96 @@ def pick_winner(message):
     )
 
 
-# 📞 تواصل
-@bot.message_handler(func=lambda message: message.text == "📞 تواصل مع الإدارة")
+# =========================
+# 📋 إدارة المشاركين (أدمن)
+# =========================
+@bot.message_handler(func=lambda m: m.text == "📋 إدارة المشاركين")
+def manage_participants(message):
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    if not participants:
+        bot.send_message(message.chat.id, "❌ لا يوجد مشاركين.")
+        return
+
+    for user_id, data in participants.items():
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton(
+                "🚫 إقصاء من السحب",
+                callback_data=f"remove_{user_id}"
+            )
+        )
+
+        bot.send_message(
+            message.chat.id,
+            f"👤 {data['name']} - 🎟 {data['number']}",
+            reply_markup=markup
+        )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("remove_"))
+def remove_user_callback(call):
+    if call.from_user.id != ADMIN_ID:
+        return
+
+    user_id = int(call.data.split("_")[1])
+
+    if user_id in participants:
+        available_numbers.append(participants[user_id]["number"])
+        del participants[user_id]
+
+        bot.edit_message_text(
+            "✅ تم إقصاء المستخدم من السحب.",
+            call.message.chat.id,
+            call.message.message_id
+        )
+    else:
+        bot.answer_callback_query(call.id, "المستخدم غير موجود.")
+
+
+# =========================
+# 📞 تواصل مع الإدارة
+# =========================
+@bot.message_handler(func=lambda m: m.text == "📞 تواصل مع الإدارة")
 def contact_admin(message):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton(
+            "✉️ إرسال رسالة للإدارة",
+            callback_data="contact_admin"
+        )
+    )
+    markup.add(
+        types.InlineKeyboardButton(
+            "🔗 فتح حساب الإدارة",
+            url=f"https://t.me/{ADMIN_USERNAME}"
+        )
+    )
+
     bot.send_message(
         message.chat.id,
-        "للتواصل مع الإدارة:\n@abdallahmalhosseiny"
+        "اختر طريقة التواصل 👇",
+        reply_markup=markup
     )
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "contact_admin")
+def contact_step(call):
+    bot.send_message(call.message.chat.id, "اكتب رسالتك للإدارة 👇")
+    bot.register_next_step_handler(call.message, forward_to_admin)
+
+
+def forward_to_admin(message):
+    text = (
+        f"📩 رسالة جديدة من مستخدم\n\n"
+        f"👤 الاسم: {message.from_user.first_name}\n"
+        f"🆔 ID: {message.from_user.id}\n\n"
+        f"📝 الرسالة:\n{message.text}"
+    )
+
+    bot.send_message(ADMIN_ID, text)
+    bot.send_message(message.chat.id, "✅ تم إرسال رسالتك للإدارة.")
 
 
 bot.infinity_polling()
