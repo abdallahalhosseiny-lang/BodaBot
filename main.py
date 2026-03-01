@@ -80,8 +80,17 @@ def verify_subscription(call):
 # 🔹 دخول السحب
 @bot.message_handler(commands=['entering_the_draw'])
 def enter_draw(message):
-    if not check_subscription(message.from_user.id):
+    user_id = message.from_user.id
+
+    if not check_subscription(user_id):
         send_subscription_message(message.chat.id)
+        return
+
+    if user_id in participants:
+        bot.send_message(
+            message.chat.id,
+            "❌ لقد دخلت السحب بالفعل."
+        )
         return
 
     bot.send_message(
@@ -91,9 +100,38 @@ def enter_draw(message):
 
     bot.register_next_step_handler(message, save_name)
 
+
 def save_name(message):
     user_id = message.from_user.id
     entered_name = message.text.strip()
+
+    if user_id in participants:
+        return
+
+    for data in participants.values():
+        if data["name"].lower() == entered_name.lower():
+            bot.send_message(
+                message.chat.id,
+                "❌ عذراً هذا الإسم مأخوذ بالفعل\nبرجاء إختيار اسم آخر"
+            )
+            return
+
+    if not available_numbers:
+        bot.send_message(message.chat.id, "❌ انتهت أرقام السحب.")
+        return
+
+    number = random.choice(available_numbers)
+    available_numbers.remove(number)
+
+    participants[user_id] = {
+        "name": entered_name,
+        "number": number
+    }
+
+    bot.send_message(
+        message.chat.id,
+        f"✅ تم دخول السحب بإسم: {entered_name}\n🎟 رقمك في السحب: {number}"
+            )
 
     # منع الشخص يدخل مرتين
     if user_id in participants:
