@@ -3,7 +3,9 @@ import random
 from telebot import TeleBot, types
 
 TOKEN = os.environ.get("TOKEN")
-CHANNEL_USERNAME = "@BODACHETO"
+
+# 🔥 غيرنا القناة هنا
+CHANNEL_USERNAME = "@bodadraws"
 
 bot = TeleBot(TOKEN)
 
@@ -41,6 +43,7 @@ def send_subscription_message(chat_id):
         reply_markup=markup
     )
 
+# 🔹 /start
 @bot.message_handler(commands=['start'])
 def start(message):
     if not check_subscription(message.from_user.id):
@@ -50,9 +53,9 @@ def start(message):
     bot.send_message(
         message.chat.id,
         "🔥 سحب على 660 شدة ببجي 🔥\n\n"
-        "للدخول اكتب:\n"
+        "🎯 للدخول اكتب:\n"
         "/Entering_the_draw\n\n"
-        "لعرض المشاركين اكتب:\n"
+        "📊 لعرض المشاركين:\n"
         "/participants"
     )
 
@@ -63,14 +66,14 @@ def verify_subscription(call):
         bot.answer_callback_query(call.id, "تم التحقق بنجاح ✅")
         bot.send_message(
             call.message.chat.id,
-            "🔥 يمكنك الآن الدخول في السحب\n\n"
+            "🔥 يمكنك الآن استخدام البوت\n\n"
             "/Entering_the_draw"
         )
     else:
         bot.answer_callback_query(call.id)
         bot.send_message(
             call.message.chat.id,
-            "عذراً لم يتم الإشتراك في القناه\n"
+            "❌ عذراً لم يتم الإشتراك في القناه\n"
             "من فضلك إشترك في القناه لإستخدام البوت"
         )
 
@@ -78,6 +81,7 @@ def verify_subscription(call):
 @bot.message_handler(commands=['Entering_the_draw'])
 def enter_draw(message):
     if not check_subscription(message.from_user.id):
+        send_subscription_message(message.chat.id)
         return
 
     bot.send_message(
@@ -112,7 +116,7 @@ def save_name(message):
         f"🎟 رقمك في السحب: {number}"
     )
 
-# 🔹 عرض عدد المشاركين + قائمة الأسماء
+# 🔹 عرض عدد المشتركين + الأسماء
 @bot.message_handler(commands=['participants'])
 def show_participants(message):
 
@@ -131,15 +135,3 @@ def show_participants(message):
     bot.send_message(message.chat.id, text)
 
 bot.infinity_polling()
-# 🔹 معلومات السحب
-@bot.message_handler(commands=['draw_info'])
-def draw_info(message):
-
-    bot.send_message(
-        message.chat.id,
-        "🔥 تفاصيل السحب 🔥\n\n"
-        "🎁 الجائزة: 660 شدة ببجي\n"
-        "👥 عدد الأرقام: من 1 إلى 1000\n"
-        "🎯 يتم اختيار فائز عشوائي\n"
-        "📢 لازم تكون مشترك في القناة"
-    )
