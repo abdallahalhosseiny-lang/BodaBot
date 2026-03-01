@@ -78,7 +78,7 @@ def verify_subscription(call):
         )
 
 # 🔹 دخول السحب
-@bot.message_handler(commands=['Entering_the_draw'])
+@bot.message_handler(commands=['entering_the_draw'])
 def enter_draw(message):
     if not check_subscription(message.from_user.id):
         send_subscription_message(message.chat.id)
