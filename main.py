@@ -1,11 +1,13 @@
 import os
 import random
+import datetime
 from telebot import TeleBot, types
 
 TOKEN = os.environ.get("TOKEN")
 
 CHANNEL_USERNAME = "@bodadraws"
 ADMIN_ID = 2109926990  # 👑 انت
+ADMIN_USERNAME = "abdallahmalhosseiny"  # من غير @
 
 bot = TeleBot(TOKEN)
 
@@ -15,7 +17,7 @@ available_numbers = list(range(1, 1001))
 
 
 # =========================
-# ✅ فحص الاشتراك
+# فحص الاشتراك
 # =========================
 def check_subscription(user_id):
     try:
@@ -26,16 +28,18 @@ def check_subscription(user_id):
 
 
 # =========================
-# ✅ رسالة الاشتراك
+# رسالة الاشتراك
 # =========================
 def send_subscription_message(chat_id):
     markup = types.InlineKeyboardMarkup()
+
     markup.add(
         types.InlineKeyboardButton(
             "🔔 إشتراك",
             url=f"https://t.me/{CHANNEL_USERNAME.replace('@','')}"
         )
     )
+
     markup.add(
         types.InlineKeyboardButton(
             "✅ تحقق من إشتراكي",
@@ -51,7 +55,7 @@ def send_subscription_message(chat_id):
 
 
 # =========================
-# 👑 القائمة الرئيسية
+# القائمة الرئيسية
 # =========================
 def main_menu(chat_id, is_admin=False):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -95,14 +99,17 @@ def verify_subscription(call):
 
 
 # =========================
-# 🎯 دخول السحب
+# دخول السحب
 # =========================
 @bot.message_handler(func=lambda m: m.text == "🎯 دخول السحب")
 def enter_draw(message):
     user_id = message.from_user.id
 
     if user_id in banned_users:
-        bot.send_message(message.chat.id, "⛔ أنت محظور نهائياً من جميع السحوبات.")
+        bot.send_message(
+            message.chat.id,
+            "⛔ أنت محظور نهائياً من جميع السحوبات."
+        )
         return
 
     if user_id in participants:
@@ -141,10 +148,11 @@ def save_name(message):
 
 
 # =========================
-# 📊 عرض المشاركين (مصلح)
+# عرض المشاركين
 # =========================
 @bot.message_handler(func=lambda m: m.text == "📊 عرض المشاركين")
 def show_participants(message):
+
     if not participants:
         bot.send_message(message.chat.id, "لا يوجد مشاركين حالياً.")
         return
@@ -158,7 +166,7 @@ def show_participants(message):
 
 
 # =========================
-# ℹ️ معلومات السحب
+# معلومات السحب
 # =========================
 @bot.message_handler(func=lambda m: m.text == "ℹ️ معلومات السحب")
 def draw_info(message):
@@ -171,7 +179,7 @@ def draw_info(message):
 
 
 # =========================
-# 🏆 اختيار فائز
+# اختيار فائز
 # =========================
 @bot.message_handler(func=lambda m: m.text == "🏆 اختيار فائز")
 def pick_winner(message):
@@ -193,7 +201,7 @@ def pick_winner(message):
 
 
 # =========================
-# 📋 إدارة المشاركين
+# إدارة المشاركين
 # =========================
 @bot.message_handler(func=lambda m: m.text == "📋 إدارة المشاركين")
 def manage_participants(message):
@@ -242,6 +250,30 @@ def remove_user(call):
         available_numbers.append(participants[user_id]["number"])
         del participants[user_id]
 
+        now = datetime.datetime.now()
+        date_str = now.strftime("%d_%m_%Y")
+        time_str = now.strftime("%H:%M")
+
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton(
+                "📞 تواصل مع الإدارة",
+                url=f"https://t.me/{ADMIN_USERNAME}"
+            )
+        )
+
+        try:
+            bot.send_message(
+                user_id,
+                f"🚫 تم إقصاؤك من السحب الحالي\n\n"
+                f"📅 تاريخ الإقصاء: {date_str}\n"
+                f"⏰ وقت الإقصاء: {time_str}\n\n"
+                f"إذا كان لديك استفسار يمكنك التواصل مع الإدارة:",
+                reply_markup=markup
+            )
+        except:
+            pass
+
         bot.edit_message_text(
             "✅ تم إقصاء المستخدم من هذا السحب فقط.",
             call.message.chat.id,
@@ -258,15 +290,38 @@ def ban_user(call):
         return
 
     user_id = int(call.data.split("_")[1])
-
     banned_users.add(user_id)
 
     if user_id in participants:
         available_numbers.append(participants[user_id]["number"])
         del participants[user_id]
 
+    now = datetime.datetime.now()
+    date_str = now.strftime("%d_%m_%Y")
+    time_str = now.strftime("%H:%M")
+
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton(
+            "📞 تواصل مع الإدارة",
+            url=f"https://t.me/{ADMIN_USERNAME}"
+        )
+    )
+
+    try:
+        bot.send_message(
+            user_id,
+            f"🛑 تم حظر حسابك نهائياً من جميع السحوبات\n\n"
+            f"📅 تاريخ الحظر: {date_str}\n"
+            f"⏰ وقت الحظر: {time_str}\n\n"
+            f"للاستفسار يمكنك التواصل مع الإدارة:",
+            reply_markup=markup
+        )
+    except:
+        pass
+
     bot.edit_message_text(
-        "🛑 تم حظر الحساب نهائياً من جميع السحوبات.",
+        "🛑 تم حظر الحساب نهائياً.",
         call.message.chat.id,
         call.message.message_id
     )
